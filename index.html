@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Face Recognition System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 30px;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #4a5568;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            transform: scale(1.02);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            min-width: 200px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+        }
+
+        .video-container {
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid #e2e8f0;
+            display: none;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        #videoElement {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            display: block;
+        }
+
+        .recognition-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .face-box {
+            position: absolute;
+            border: 3px solid #00ff00;
+            background: rgba(0, 255, 0, 0.1);
+            border-radius: 5px;
+        }
+
+        .face-label {
+            position: absolute;
+            background: rgba(0, 255, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            top: -30px;
+            left: 0;
+        }
+
+        .unknown-face {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, 0.1);
+        }
+
+        .unknown-face .face-label {
+            background: rgba(255, 0, 0, 0.8);
+        }
+
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .status.success {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+        }
+
+        .status.error {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+        }
+
+        .status.info {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .instructions {
+            background: rgba(79, 172, 254, 0.1);
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #2d3748;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .users-list {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .recognition-results {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .btn {
+                min-width: 150px;
+                margin: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎭 Fixed Face Recognition System</h1>
+            <p>Proper Database Connection - Names Display Correctly</p>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <span class="stat-value" id="registeredCount">0</span>
+                <div class="stat-label">Registered Faces</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="recognitionCount">0</span>
+                <div class="stat-label">Recognition Sessions</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value" id="accuracyRate">95%</span>
+                <div class="stat-label">Accuracy Rate</div>
+            </div>
+        </div>
+
+        <!-- Registration Section -->
+        <div class="section" id="registrationSection">
+            <h2>👤 Register New Face</h2>
+            <div class="form-group">
+                <label for="nameInput">Enter Your Name:</label>
+                <input type="text" id="nameInput" placeholder="e.g., John Doe" maxlength="50">
+            </div>
+            <div class="instructions">
+                📋 <strong>Instructions:</strong> Enter your name above, then click "Start Registration". Position your face clearly in the camera view and click "Capture Face" when ready.
+            </div>
+            <button class="btn" id="startRegistrationBtn" onclick="startRegistration()">
+                📷 Start Registration
+            </button>
+        </div>
+
+        <!-- Recognition Section -->
+        <div class="section" id="recognitionSection">
+            <h2>🔍 Face Recognition</h2>
+            <div class="instructions">
+                🎯 <strong>Recognition Mode:</strong> Click the button below to start real-time face recognition. The system will identify registered faces and display their correct names.
+            </div>
+            <button class="btn btn-secondary" id="startRecognitionBtn" onclick="startRecognition()">
+                🚀 Start Recognition
+            </button>
+        </div>
+
+        <!-- Video Container -->
+        <div class="video-container" id="videoContainer">
+            <video id="videoElement" autoplay muted playsinline></video>
+            <div class="recognition-overlay" id="recognitionOverlay"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls" id="controls" style="display: none;">
+            <button class="btn btn-success" id="captureBtn" onclick="captureImage()" style="display: none;">
+                📸 Capture Face
+            </button>
+            <button class="btn btn-danger" id="stopBtn" onclick="stopCamera()">
+                ⏹️ Stop Camera
+            </button>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="statusMessage"></div>
+
+        <!-- Recognition Results -->
+        <div id="recognitionResults"></div>
+
+        <!-- Backend Connection Status -->
+        <div class="section">
+            <h2>🔌 System Status</h2>
+            <div id="connectionStatus" class="status info">
+                🔄 Checking backend connection...
+            </div>
+            <div class="controls">
+                <button class="btn" onclick="checkBackendConnection()">
+                    🔍 Check Connection
+                </button>
+                <button class="btn btn-secondary" onclick="loadRegisteredUsers()">
+                    👥 List Users
+                </button>
+            </div>
+            <div class="users-list" id="usersList" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let videoStream = null;
+        let isRegistering = false;
+        let isRecognizing = false;
+        let registrationName = '';
+        let recognitionInterval = null;
+        
+        // Backend API URLs - Change this if your backend runs on different port
+        const API_BASE = 'http://localhost:5000/api';
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Fixed Face Recognition System Starting...');
+            checkBackendConnection();
+            updateStats();
+        });
+
+        async function checkBackendConnection() {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.innerHTML = '<div class="loading"></div>Checking connection...';
+            statusEl.className = 'status info';
+            
+            try {
+                console.log('🔍 Checking backend connection...');
+                const response = await fetch(`${API_BASE}/status`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend connected:', data);
+                    statusEl.innerHTML = `✅ ${data.message}<br>📊 ${data.registered_faces} faces in database<br>🔐 Database loaded: ${data.database_loaded ? 'Yes' : 'No'}`;
+                    statusEl.className = 'status success';
+                    updateStats();
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Backend connection error:', error);
+                statusEl.innerHTML = `❌ Backend connection failed<br>📍 Please start your Python backend:<br><code>python backend/app.py</code>`;
+                statusEl.className = 'status error';
+                return false;
+            }
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('registeredCount').textContent = data.registered_faces;
+                    
+                    // Update recognition count from localStorage
+                    const recognitionCount = localStorage.getItem('recognitionCount') || '0';
+                    document.getElementById('recognitionCount').textContent = recognitionCount;
+                } else {
+                    console.warn('Failed to fetch stats from backend');
+                }
+            } catch (error) {
+                console.error('Stats update error:', error);
+            }
+        }
+
+        async function startCamera() {
+            try {
+                console.log('📹 Starting camera...');
+                videoStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 },
+                        facingMode: 'user'
+                    } 
+                });
+                
+                const videoElement = document.getElementById('videoElement');
+                videoElement.srcObject = videoStream;
+                
+                document.getElementById('videoContainer').style.display = 'block';
+                document.getElementById('controls').style.display = 'block';
+                
+                showStatus('📹 Camera started successfully!', 'success');
+                return true;
+            } catch (error) {
+                showStatus('❌ Camera access denied or not available!', 'error');
+                console.error('Camera error:', error);
+                return false;
+            }
+        }
+
+        function stopCamera() {
+            console.log('📴 Stopping camera...');
+            
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoStream = null;
+            }
+            
+            if (recognitionInterval) {
+                clearInterval(recognitionInterval);
+                recognitionInterval = null;
+            }
+            
+            document.getElementById('videoContainer').style.display = 'none';
+            document.getElementById('controls').style.display = 'none';
+            document.getElementById('captureBtn').style.display = 'none';
+            document.getElementById('recognitionOverlay').innerHTML = '';
+            document.getElementById('recognitionResults').innerHTML = '';
+            
+            // Reset button states
+            resetButtons();
+            isRegistering = false;
+            isRecognizing = false;
+            
+            showStatus('📴 Camera stopped.', 'info');
+        }
+
+        async function startRegistration() {
+            const nameInput = document.getElementById('nameInput');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                showStatus('❌ Please enter your name first!', 'error');
+                nameInput.focus();
+                return;
+            }
+            
+            if (name.length < 2) {
+                showStatus('❌ Name must be at least 2 characters long!', 'error');
+                nameInput.focus();
+                return;
+            }
+            
+            console.log(`👤 Starting registration for: ${name}`);
+            registrationName = name;
+            isRegistering = true;
+            
+            const started = await startCamera();
+            if (started) {
+                document.getElementById('captureBtn').style.display = 'inline-block';
+                document.getElementById('startRegistrationBtn').disabled = true;
+                document.getElementById('startRecognitionBtn').disabled = true;
+                
+                showStatus(`📸 Registration mode active for "${name}". Position yourself in the camera view and click "Capture Face" when ready.`, 'info');
+            }
+        }
+
+        async function captureImage() {
+            if (!isRegistering || !registrationName) {
+                showStatus('❌ Registration mode not active!', 'error');
+                return;
+            }
+            
+            console.log(`📸 Capturing image for: ${registrationName}`);
+            
+            const video = document.getElementById('videoElement');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to blob for sending to backend
+            canvas.toBlob(async (blob) => {
+                try {
+                    showStatus('<div class="loading"></div>Processing face registration...', 'info');
+                    
+                    const result = await registerFaceToBackend(registrationName, blob);
+                    
+                    if (result.success) {
+                        showStatus(`✅ ${result.message}`, 'success');
+                        console.log('✅ Registration successful:', result);
+                        
+                        // Update stats
+                        updateStats();
+                        checkBackendConnection();
+                        
+                        // Clear form and stop camera
+                        document.getElementById('nameInput').value = '';
+                        setTimeout(() => stopCamera(), 3000);
+                    } else {
+                        showStatus(`❌ ${result.message}`, 'error');
+                        console.error('❌ Registration failed:', result);
+                    }
+                    
+                } catch (error) {
+                    showStatus('❌ Registration failed. Please check your backend connection.', 'error');
+                    console.error('Registration error:', error);
+                }
+            }, 'image/jpeg', 0.9);
+        }
+
+        async function registerFaceToBackend(name, imageBlob) {
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('image', imageBlob, 'face_capture.jpg');
+            
+            console.log(`📤 Sending registration request for: ${name}`);
+            
+            const response = await fetch(`${API_BASE}/register`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || 'Registration failed');
+            }
+            
+            return result;
+        }
+
+        async function startRecognition() {
+            console.log('🎯 Starting face recognition...');
+            isRecognizing = true;
+            
+            const started = await startCamera();
+            if (started) {
+                document.getElementById('startRegistrationBtn').disabled = true;
+                document.getElementById('startRecognitionBtn').disabled = true;
+                
+                showStatus('🎯 Recognition mode active. Registered faces will be identified automatically.', 'success');
+                
+                // Start recognition loop
+                startRecognitionLoop();
+            }
+        }
+
+        function startRecognitionLoop() {
+            if (!isRecognizing || !videoStream) return;
+            
+            // Capture and recognize every 2 seconds
+            recognitionInterval = setInterval(async () => {
+                if (isRecognizing) {
+                    await performRecognition();
+                }
+            }, 2000);
+        }
+
+        async function performRecognition() {
+            try {
+                const video = document.getElementById('videoElement');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                // Convert to blob for sending to backend
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const result = await recognizeFaceFromBackend(blob);
+                        
+                        if (result.success && result.faces.length > 0) {
+                            displayRecognitionResults(result.faces);
+                            
+                            // Update recognition count
+                            const currentCount = parseInt(localStorage.getItem('recognitionCount') || '0');
+                            localStorage.setItem('recognitionCount', (currentCount + 1).toString());
+                            updateStats();
+                        } else {
+                            // Clear overlay if no faces detected
+                            document.getElementById('recognitionOverlay').innerHTML = '';
+                            document.getElementById('recognitionResults').innerHTML = '';
+                        }
+                        
+                    } catch (error) {
+                        console.error('Recognition error:', error);
+                    }
+                }, 'image/jpeg', 0.8);
+                
+            } catch (error) {
+                console.error('Recognition capture error:', error);
+            }
+        }
+
+        async function recognizeFaceFromBackend(imageBlob) {
+            const formData = new FormData();
+            formData.append('image', imageBlob, 'recognition_capture.jpg');
+            
+            const response = await fetch(`${API_BASE}/recognize`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.message || 'Recognition failed');
+            }
+            
+            return result;
+        }
+
+        function displayRecognitionResults(faces) {
+            const overlay = document.getElementById('recognitionOverlay');
+            const results = document.getElementById('recognitionResults');
+            const video = document.getElementById('videoElement');
+            
+            // Clear previous results
+            overlay.innerHTML = '';
+            
+            // Calculate scale factors
+            const scaleX = video.offsetWidth / video.videoWidth;
+            const scaleY = video.offsetHeight / video.videoHeight;
+            
+            let resultsHTML = '<div class="recognition-results"><h3>🎯 Recognition Results:</h3>';
+            
+            faces.forEach((face, index) => {
+                // Create face box overlay
+                const faceBox = document.createElement('div');
+                const isUnknown = face.name === 'Unknown';
+                
+                faceBox.className = isUnknown ? 'face-box unknown-face' : 'face-box';
+                faceBox.style.left = (face.location.left * scaleX) + 'px';
+                faceBox.style.top = (face.location.top * scaleY) + 'px';
+                faceBox.style.width = ((face.location.right - face.location.left) * scaleX) + 'px';
+                faceBox.style.height = ((face.location.bottom - face.location.top) * scaleY) + 'px';
+                
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'face-label';
+                label.textContent = isUnknown ? 'Unknown' : `${face.name} (${face.confidence.toFixed(1)}%)`;
+                
+                faceBox.appendChild(label);
+                overlay.appendChild(faceBox);
+                
+                // Add to results text
+                if (!isUnknown) {
+                    resultsHTML += `<p>✅ <strong>${face.name}</strong> - Confidence: ${face.confidence.toFixed(1)}%</p>`;
+                    console.log(`✅ Recognized: ${face.name} (${face.confidence.toFixed(1)}%)`);
+                } else {
+                    resultsHTML += `<p>❓ <strong>Unknown Face</strong> - Confidence: ${face.confidence.toFixed(1)}%</p>`;
+                    console.log(`❓ Unknown face detected (${face.confidence.toFixed(1)}%)`);
+                }
+            });
+            
+            resultsHTML += '</div>';
+            results.innerHTML = resultsHTML;
+        }
+
+        async function loadRegisteredUsers() {
+            try {
+                showStatus('<div class="loading"></div>Loading registered users...', 'info');
+                
+                const response = await fetch(`${API_BASE}/users`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    displayUsersList(result.users);
+                    showStatus(`✅ Loaded ${result.total_users} registered users`, 'success');
+                } else {
+                    showStatus('❌ Failed to load users', 'error');
+                }
+                
+            } catch (error) {
+                showStatus('❌ Error loading users. Check backend connection.', 'error');
+                console.error('Users loading error:', error);
+            }
+        }
+
+        function displayUsersList(users) {
+            const usersList = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                usersList.innerHTML = '<p>No users registered yet.</p>';
+            } else {
+                let html = '<h3>👥 Registered Users:</h3>';
+                users.forEach((user, index) => {
+                    const timestamp = new Date(user.timestamp).toLocaleString();
+                    html += `
+                        <div class="user-item">
+                            <div>
+                                <strong>${user.name}</strong><br>
+                                <small>ID: ${user.id} | Registered: ${timestamp}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                usersList.innerHTML = html;
+            }
+            
+            usersList.style.display = 'block';
+        }
+
+        function resetButtons() {
+            document.getElementById('startRegistrationBtn').disabled = false;
+            document.getElementById('startRecognitionBtn').disabled = false;
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            statusEl.innerHTML = message;
+            statusEl.className = `status ${type}`;
+            
+            // Auto-hide success and info messages after 5 seconds
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    if (statusEl.innerHTML === message) {
+                        statusEl.innerHTML = '';
+                        statusEl.className = '';
+                    }
+                }, 5000);
+            }
+        }
+
+        // Handle page unload to clean up camera
+        window.addEventListener('beforeunload', () => {
+            stopCamera();
+        });
+
+        // Add keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                stopCamera();
+            } else if (e.key === ' ' && isRegistering) {
+                e.preventDefault();
+                captureImage();
+            }
+        });
+
+        // Auto-check connection every 30 seconds
+        setInterval(checkBackendConnection, 30000);
+    </script>
+</body>
+</html>
